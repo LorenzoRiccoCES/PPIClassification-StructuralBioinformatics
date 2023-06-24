@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+#ignore temp.pdb file
+temp.pdb
+
 # C extensions
 *.so
 

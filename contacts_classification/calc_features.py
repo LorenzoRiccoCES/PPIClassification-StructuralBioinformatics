@@ -1,9 +1,8 @@
-
-
+#!/usr/bin/python
 from Bio.PDB import DSSP, HSExposureCB, PPBuilder, is_aa, NeighborSearch
 from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio.SeqUtils import seq1
-
+import numpy as np
 import pandas as pd
 from pathlib import Path, PurePath
 import json
@@ -121,6 +120,7 @@ if __name__ == '__main__':
             chain_1 = residue_1.get_parent().id
             chain_2 = residue_2.get_parent().id
 
+            '''
             data.append((pdb_id,
                     chain_1,
                     *residue_1.id[1:],
@@ -136,6 +136,22 @@ if __name__ == '__main__':
                     *hse.get((chain_2, residue_2.id), [None, None])[:2],
                     *rama_dict.get((chain_2, residue_2.id), [None, None, None]),
                     *atchley_scale[aa_2]))
+            '''
+            data.append((pdb_id,
+                    chain_1,
+                    residue_1.id[1:],
+                    aa_1,
+                    dssp.get((chain_1, residue_1.id), [None, None, None, None])[2:4],
+                    hse.get((chain_1, residue_1.id), [None, None])[:2],
+                    rama_dict.get((chain_1, residue_1.id), [None, None, None]),
+                    atchley_scale[aa_1],
+                    chain_2,
+                    residue_2.id[1:],
+                    aa_2,
+                    dssp.get((chain_2, residue_2.id), [None, None, None, None])[2:4],
+                    hse.get((chain_2, residue_2.id), [None, None])[:2],
+                    rama_dict.get((chain_2, residue_2.id), [None, None, None]),
+                    atchley_scale[aa_2]))
 
     if not data:
         logging.warning("{} no contacts error (skipping prediction)".format(pdb_id))
