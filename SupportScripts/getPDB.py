@@ -9,10 +9,10 @@ def store_pdb_structure(pdb_id):
 
     # Send an HTTP request to download the PDB file
     response = requests.get(url, stream=True)
-    response_cif = requests.get(cif_url)
+    response_cif = requests.get(cif_url, stream=True)
 
     # Check if the request was successful
-    if response.status_code == 200:
+    if response.status_code == 200 and response_cif.status_code == 200:
         # Generate a unique temporary file name
         temp_file = "temp.pdb"
         temp_file_cif = "temp.cif"      
@@ -22,12 +22,18 @@ def store_pdb_structure(pdb_id):
             with open(temp_file, "wb") as file:
                 response.raw.decode_content = True
                 shutil.copyfileobj(response.raw, file)
-            print(f"PDB structure '{pdb_id}' has been temporarily stored as '{temp_file}' and '{temp_file_cif}' .")
+            print(f"PDB structure '{pdb_id}' has been temporarily stored as '{temp_file}'")
         except Exception as e:
-            print(f"Error occurred while storing the PDB structure: {e}")
-
-        # Save the CIF file to the local directory
-        with open(temp_file_cif, "wb") as file:
-            file.write(response.content)
+            return(f"Error occurred while storing the PDB structure: {e}")
+             
+        try:
+            # Save the downloaded PDB file to the temporary location
+            with open(temp_file_cif, "wb") as file:
+                response_cif.raw.decode_content = True
+                shutil.copyfileobj(response_cif.raw, file)
+            print(f"PDB structure '{pdb_id}' has been temporarily stored as '{temp_file_cif}'")
+        except Exception as e:
+            return(f"Error occurred while storing the PDB structure: {e}")
+        
     else:
-        print(f"Error: Unable to download PDB structure with ID '{pdb_id}'.")
+        return(f"Error: Unable to download PDB structure with ID '{pdb_id}'")
