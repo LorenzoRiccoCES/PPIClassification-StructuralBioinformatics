@@ -3,8 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-#ignore temp.pdb file
-temp.pdb
+#ignore temps file
+*.cif
+*.pdb
+*.tsv
 
 # C extensions
 *.so

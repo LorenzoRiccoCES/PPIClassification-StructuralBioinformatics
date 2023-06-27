@@ -4,9 +4,9 @@ import os
 # Load the model
 #model = tf.keras.models.load_model(r"C:\Users\emanu\Desktop\StructBio\model.h5", compile=False)
 
-def execute_program(program_path):
+def execute_program(program_path, pdb_id):
     try:
-        subprocess.run(["python3", program_path, "temp.cif", "-out_dir", "outputFolder"], check=True)
+        subprocess.run(["python3", program_path, f"{pdb_id}.cif", "-out_dir", "outputFolder"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error occurred while executing the program: {e}")
 
@@ -22,4 +22,4 @@ if __name__ == "__main__":
         #for execution of calc_features.py: $python3 calc_features.py my_pdb.cif -out_dir output/
         #execute_program("contacts_classification/calc_features.py")
         #full path
-        execute_program(f"contacts_classification/calc_features.py")
+        execute_program(f"contacts_classification/calc_features.py", pdb_id)

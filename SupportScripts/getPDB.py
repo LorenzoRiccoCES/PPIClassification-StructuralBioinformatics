@@ -14,8 +14,8 @@ def store_pdb_structure(pdb_id):
     # Check if the request was successful
     if response.status_code == 200 and response_cif.status_code == 200:
         # Generate a unique temporary file name
-        temp_file = "temp.pdb"
-        temp_file_cif = "temp.cif"      
+        temp_file = f"{pdb_id}.pdb"
+        temp_file_cif = f"{pdb_id}.cif"      
         
         try:
             # Save the downloaded PDB file to the temporary location
