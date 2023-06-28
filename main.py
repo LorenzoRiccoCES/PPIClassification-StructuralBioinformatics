@@ -53,15 +53,12 @@ def load_model(folder_path, models = []):
         file_path = os.path.join(folder_path, file_name)
         # Check if the current item is a file
         if os.path.isfile(file_path):
-            #load .tsv 
-            data = []
-            data = generateFiltersTSV(file_path)
             #load model
-            loaded_model = MLP(data.shape[1],1)
+            loaded_model = MLP(20,50)
             loaded_model.load_state_dict(torch.load(file_path))
             loaded_model.eval()
-            
-            models.append(loaded_model)  
+            models.append(loaded_model) 
+    return models
 
 if __name__ == "__main__":
 
@@ -75,9 +72,13 @@ if __name__ == "__main__":
         outputOperation = f'{PDBresult}{terminazione}'
         print(outputOperation)
     else:
+        #load .tsv 
+        data = []
         execute_program(f'contacts_classification/calc_features.py', pdb_id)
+        data = generateFiltersTSV(f"outputFolder/{pdb_id}.tsv")
         models = []
         models = load_model(f'models/', models)
+         
 
 
 
@@ -85,5 +86,6 @@ if __name__ == "__main__":
 problemi da risolvere
     - spostare e far funzionare MLP
     - controllare se posizione di load_model e tutte sottofunzioni sono nel posto corretto
+    - conversione dataframe in Tensor
 
 '''
