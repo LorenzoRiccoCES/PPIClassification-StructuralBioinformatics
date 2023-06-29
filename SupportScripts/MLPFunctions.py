@@ -12,24 +12,11 @@ import pandas as pd
     
 
 def encode_data(df):
-    # Create a copy of the input DataFrame to avoid modifying the original data
     df_encoded = df.copy()
-
-    # Create a LabelEncoder object to encode non-categorical string data
     label_encoder = LabelEncoder()
-
-    # Iterate over each column in the DataFrame
     for column in df_encoded.columns:
-        # Check if the column contains non-numeric data
         if df_encoded[column].dtype == 'object':
-            # Check if the column contains categorical data
-            if df_encoded[column].nunique() < len(df_encoded) / 2:
-                # Use one-hot encoding to convert the column into a numerical format
-                df_encoded = pd.get_dummies(df_encoded, columns=[column])
-            else:
-                # Use label encoding to convert the column into a numerical format
-                df_encoded[column] = label_encoder.fit_transform(df_encoded[column])
-
+            df_encoded[column] = label_encoder.fit_transform(df_encoded[column])
     return df_encoded
 
 
