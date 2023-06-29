@@ -1,4 +1,4 @@
-from SupportScripts import getPDB
+from SupportScripts import MLPFunctions, getPDB
 import subprocess
 import os
 import joblib
@@ -16,17 +16,6 @@ def execute_program(program_path, pdb_id):
         subprocess.run(["python3", program_path, f"{pdb_id}.cif", "-out_dir", "outputFolder"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error occurred while executing the program: {e}")
-
-class MLP(nn.Module):
-    def __init__(self, input_size, hidden_size):
-        super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.tanh = nn.Tanh()
-
-    def forward(self, x):
-        out = self.fc1(x)
-        out = self.tanh(out)
-        return out
     
 def generateFiltersTSV(file_path):
     with open(file_path, 'r', encoding='latin-1') as file:
@@ -47,20 +36,21 @@ def generateFiltersTSV(file_path):
     return df
 
 
-def load_model(folder_path, models = []):
+def load_model(folder_path, shape, models = []):
     #for cycle: iterate all file in folder
     for file_name in os.listdir(folder_path):
         file_path = os.path.join(folder_path, file_name)
         # Check if the current item is a file
         if os.path.isfile(file_path):
             #load model
-            loaded_model = MLP(20,50)
+            loaded_model = MLPFunctions.MLP(shape,10)
             loaded_model.load_state_dict(torch.load(file_path))
-            loaded_model.eval()
+            #loaded_model.eval()
             models.append(loaded_model) 
     return models
 
 if __name__ == "__main__":
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     models = []
 
@@ -76,16 +66,26 @@ if __name__ == "__main__":
         data = []
         execute_program(f'contacts_classification/calc_features.py', pdb_id)
         data = generateFiltersTSV(f"outputFolder/{pdb_id}.tsv")
+        #print(data)
+        # Convert input data from DataFrame to PyTorch tensor
+        data = MLPFunctions.encode_data(data)
+        #print(data)
+        Data_tensor = torch.tensor(data.to_numpy())
+        Data_tensor = Data_tensor.to(torch.float32)
         models = []
-        models = load_model(f'models/', models)
+        models = load_model(f'models/', models, data.shape[1])
+        Data_tensor = Data_tensor.to(device)
+        test=models[0]
+        output = models[0](Data_tensor)
+        #print(output)
          
 
 
 
 ''' 
 problemi da risolvere
-    - spostare e far funzionare MLP
     - controllare se posizione di load_model e tutte sottofunzioni sono nel posto corretto
-    - conversione dataframe in Tensor
+    - errore matrix dimension
+
 
 '''

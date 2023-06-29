@@ -55,9 +55,8 @@ def encode_series(series):
 
 
 class ProteinDataset(Dataset):
-    def __init__(self, X, y):
+    def __init__(self, X):
         self.X = X
-        self.y = y
 
     def __len__(self):
         return len(self.X)
@@ -65,12 +64,8 @@ class ProteinDataset(Dataset):
     def __getitem__(self, idx):
         # Convert data to numpy array and then to tensor
         x = torch.tensor(self.X.iloc[idx].to_numpy())
-        y = torch.tensor(self.y.iloc[idx])
 
-        # Reshape target data into a 0D tensor
-        y = y.argmax()
-
-        return x, y
+        return x
     
 
 class MLP(nn.Module):
