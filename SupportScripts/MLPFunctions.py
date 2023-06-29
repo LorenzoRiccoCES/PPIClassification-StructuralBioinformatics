@@ -33,26 +33,6 @@ def encode_data(df):
     return df_encoded
 
 
-def encode_series(series):
-    # Create a copy of the input Series to avoid modifying the original data
-    series_encoded = series.copy()
-
-    # Create a LabelEncoder object to encode non-categorical string data
-    label_encoder = LabelEncoder()
-
-    # Check if the Series contains non-numeric data
-    if series_encoded.dtype == 'object':
-        # Check if the Series contains categorical data
-        if series_encoded.nunique() < len(series_encoded) / 2:
-            # Use one-hot encoding to convert the Series into a numerical format
-            series_encoded = pd.get_dummies(series_encoded)
-        else:
-            # Use label encoding to convert the Series into a numerical format
-            series_encoded = pd.Series(label_encoder.fit_transform(series_encoded))
-
-    return series_encoded
-
-
 
 class ProteinDataset(Dataset):
     def __init__(self, X):
@@ -63,7 +43,7 @@ class ProteinDataset(Dataset):
 
     def __getitem__(self, idx):
         # Convert data to numpy array and then to tensor
-        x = torch.tensor(self.X.iloc[idx].to_numpy())
+        x = torch.tensor(self.X.iloc[idx])
 
         return x
     

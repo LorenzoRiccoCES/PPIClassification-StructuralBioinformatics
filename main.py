@@ -1,13 +1,10 @@
 from SupportScripts import MLPFunctions, getPDB
 import subprocess
 import os
-import joblib
 import torch
-import csv
 import pandas as pd
 #rimuovere
 from torch import nn
-import json
 
 
 
@@ -35,7 +32,7 @@ def generateFiltersTSV(file_path):
     df = df.drop(cols_to_drop, axis=1)
     return df
 
-
+'''
 def load_model(folder_path, shape, models = []):
     #for cycle: iterate all file in folder
     for file_name in os.listdir(folder_path):
@@ -48,6 +45,18 @@ def load_model(folder_path, shape, models = []):
             #loaded_model.eval()
             models.append(loaded_model) 
     return models
+'''
+
+def load_model(folder_path, models=[]):
+    shape = 10  # Set the input size and hidden size as required
+    for file_name in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, file_name)
+        if os.path.isfile(file_path):
+            loaded_model = MLPFunctions.MLP(shape, shape)  # Pass the correct input size and hidden size
+            loaded_model.load_state_dict(torch.load(file_path))
+            models.append(loaded_model)
+    return models
+
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -66,26 +75,34 @@ if __name__ == "__main__":
         data = []
         execute_program(f'contacts_classification/calc_features.py', pdb_id)
         data = generateFiltersTSV(f"outputFolder/{pdb_id}.tsv")
-        #print(data)
+        #data = data.rank(pct=True).round(1).astype('category')
+        print(data)
         # Convert input data from DataFrame to PyTorch tensor
+        data.dropna(inplace=True)
+        
         data = MLPFunctions.encode_data(data)
         #print(data)
+        #data = data.reset_index(drop=True, inplace=True)
+        data = data.reset_index(drop=True)
+
+        #data = MLPFunctions.ProteinDataset(data)
+
         Data_tensor = torch.tensor(data.to_numpy())
+        #Data_tensor = torch.stack([data[i] for i in range(len(data))])
+
         Data_tensor = Data_tensor.to(torch.float32)
         models = []
+        
         models = load_model(f'models/', models, data.shape[1])
         Data_tensor = Data_tensor.to(device)
         test=models[0]
         output = models[0](Data_tensor)
         #print(output)
-         
+
 
 
 
 ''' 
 problemi da risolvere
     - controllare se posizione di load_model e tutte sottofunzioni sono nel posto corretto
-    - errore matrix dimension
-
-
 '''
