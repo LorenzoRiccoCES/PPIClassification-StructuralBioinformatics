@@ -4,27 +4,15 @@ import requests
 
 def store_pdb_structure(pdb_id):
     # Construct the URL to download the PDB file
-    url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
     cif_url = f"https://files.rcsb.org/download/{pdb_id}.cif"
 
     # Send an HTTP request to download the PDB file
-    response = requests.get(url, stream=True)
     response_cif = requests.get(cif_url, stream=True)
 
     # Check if the request was successful
-    if response.status_code == 200 and response_cif.status_code == 200:
+    if response_cif.status_code == 200:
         # Generate a unique temporary file name
-        temp_file = f"{pdb_id}.pdb"
-        temp_file_cif = f"{pdb_id}.cif"      
-        
-        try:
-            # Save the downloaded PDB file to the temporary location
-            with open(temp_file, "wb") as file:
-                response.raw.decode_content = True
-                shutil.copyfileobj(response.raw, file)
-            print(f"PDB structure '{pdb_id}' has been temporarily stored as '{temp_file}'")
-        except Exception as e:
-            return(f"Error occurred while storing the PDB structure: {e}")
+        temp_file_cif = f"{pdb_id}.cif"
              
         try:
             # Save the downloaded PDB file to the temporary location

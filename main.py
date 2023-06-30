@@ -3,9 +3,7 @@ import subprocess
 import os
 import torch
 import pandas as pd
-#rimuovere
-from torch import nn
-
+import numpy as np
 
 
 def execute_program(program_path, pdb_id):
@@ -13,7 +11,8 @@ def execute_program(program_path, pdb_id):
         subprocess.run(["python3", program_path, f"{pdb_id}.cif", "-out_dir", "outputFolder"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error occurred while executing the program: {e}")
-    
+
+
 def generateFiltersTSV(file_path):
     with open(file_path, 'r', encoding='latin-1') as file:
         lines = file.readlines()
@@ -32,20 +31,6 @@ def generateFiltersTSV(file_path):
     df = df.drop(cols_to_drop, axis=1)
     return df
 
-'''
-def load_model(folder_path, shape, models = []):
-    #for cycle: iterate all file in folder
-    for file_name in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, file_name)
-        # Check if the current item is a file
-        if os.path.isfile(file_path):
-            #load model
-            loaded_model = MLPFunctions.MLP(shape,10)
-            loaded_model.load_state_dict(torch.load(file_path))
-            #loaded_model.eval()
-            models.append(loaded_model) 
-    return models
-'''
 
 def load_model(folder_path, models=[]):
     # shape = 20  # Set the input size and hidden size as required
@@ -59,15 +44,15 @@ def load_model(folder_path, models=[]):
     return models
 
 
+
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    models = []
 
     pdb_id = input('Enter the PDB ID: ')
     PDBresult = getPDB.store_pdb_structure(pdb_id)
     # in case of error
     if (PDBresult != None):
-        terminazione = ': esecuzione terminata'
+        terminazione = ': execution finished'
         outputOperation = f'{PDBresult}{terminazione}'
         print(outputOperation)
     else:
@@ -75,38 +60,56 @@ if __name__ == "__main__":
         data = []
         execute_program(f'contacts_classification/calc_features.py', pdb_id)
         data = generateFiltersTSV(f"outputFolder/{pdb_id}.tsv")
-        #data = data.rank(pct=True).round(1).astype('category')
-        print(data)
-        print(data.shape[0], " x ", data.shape[1])
+
         # Convert input data from DataFrame to PyTorch tensor
-        data.dropna(inplace=True)
-        
+        data.dropna(inplace=True)     
         data = MLPFunctions.encode_data(data)
-
-        #print(data)
         data = data.reset_index(drop=True)
-        print(data.shape[0], " x ", data.shape[1])
-        #data = MLPFunctions.ProteinDataset(data)
-
-        Data_tensor = torch.tensor(data.to_numpy())
-        print(data.shape[0], " x ", data.shape[1])
         shape = data.shape[1]
-        #Data_tensor = torch.stack([data[i] for i in range(len(data))])
-
+        Data_tensor = torch.tensor(data.to_numpy())      
         Data_tensor = Data_tensor.to(torch.float32)
+
+        #model/s load
         models = []
         models = load_model(f'models/', models)
-        for model in models:
-            model.to(device)
-        Data_tensor = Data_tensor.to(device)
-        test = models[0]
-        output = models[0](Data_tensor)
-        #print(output)
 
+        qtaModelli = len(models)
 
+        #check if there is at least 1 model
+        if qtaModelli < 1:
+            print("Non sono stati individuati modelli in models: escuzione terminata")
 
+        else:
+            # Iterate over the files and display their names and numbers
+            file_list = os.listdir("models/")
+            # Iterate over the files and display their names and numbers
+            print("Scegliere che modello utilizzare: ")
+            for i, file_name in enumerate(file_list):
+                print(f"{i}: {file_name}")
+            #select number in list corresponding to desired model
+            selected_number = input("Seleziona un numero presente nella lista: ")
+            #error handling
+            try:
+                selected_number = int(selected_number)
+                if selected_number < 0 or selected_number >= len(file_list):
+                    raise ValueError
+            except ValueError:
+                print("Numero modello non presente: esecuzione terminata.")
+            else:
+                #generate prediction from input data and model
+                for model in models:
+                    model.to(device)
+                Data_tensor = Data_tensor.to(device)
+                test = models[selected_number]
+                output = test(Data_tensor)
+                print(output)
+                y_pred = []
+                threshold = 0.5
+                y_pred.append(output[:, 1] > threshold)
+                y_pred = torch.stack(y_pred, dim=1)
 
-''' 
-problemi da risolvere
-    - controllare se posizione di load_model e tutte sottofunzioni sono nel posto corretto
-'''
+                # Convert predicted labels to binary indicator matrix
+                y_pred_bin = np.zeros(shape=[data.shape[0], data.shape[0]])
+                for i in range(y_pred.shape[0]):
+                    y_pred_bin[i, y_pred[i]] = 1
+                print(y_pred_bin)

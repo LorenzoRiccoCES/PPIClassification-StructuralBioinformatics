@@ -1,12 +1,8 @@
 from torch import nn
 import torch
-from torch.nn import Conv2d, MaxPool2d, Linear
 from torchinfo import summary
 import torch.nn.functional as F
-from torchvision.datasets import CIFAR10
-from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader, random_split
-from torchvision.transforms import Lambda
 from sklearn.preprocessing import LabelEncoder
 import pandas as pd
     
