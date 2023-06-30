@@ -15,7 +15,7 @@ def execute_program(program_path, pdb_id):
 
 def extractInfoFromFile(file_name):
     # Extract number of features
-    features = re.search(r"_features_°(\d+)", file_name).group(1)
+    features = int(re.search(r"_features_°(\d+)", file_name).group(1))
 
     # Extract columns as a list of integers
     columns_str = re.search(r"_columns_(#[\d-]+)", file_name).group(1)
@@ -29,25 +29,8 @@ def generateFiltersTSV(matrix, columns):
     # drop not used columns
     #Drop columns not in 'columns'
     df = df.iloc[:, columns]
-    findVoid = df.iloc[1].str[0].isnull()
-    cols_to_drop = df.columns[findVoid]
-    #deve essere commentata perchè toglierebbe colonna che serve
-    #df = df.drop(cols_to_drop, axis=1)
     df = df.rank(pct=True).round(1)
-    #find and delete columns with no values
     return df
-
-
-'''def load_model(folder_path, models=[]):
-    # shape = 20  # Set the input size and hidden size as required
-    hidden = 50
-    for file_name in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, file_name)
-        if os.path.isfile(file_path):
-            loaded_model = MLPFunctions.MLP(shape, hidden)  # Pass the correct input size and hidden size
-            loaded_model.load_state_dict(torch.load(file_path, map_location=torch.device('cpu')))
-            models.append(loaded_model)
-    return models'''
 
 def get_files_list(directory):
     files_list = []
@@ -59,7 +42,6 @@ def get_files_list(directory):
 
 def load_model(file_path, features):
     hidden=50
-    print(f"file path del load_model: {file_path}")
     # Pass the correct input size and hidden size
     loaded_model = MLPFunctions.MLP(features, hidden)  
     loaded_model.load_state_dict(torch.load(file_path, map_location=torch.device('cpu')))
@@ -119,54 +101,55 @@ if __name__ == "__main__":
                     lines = file.readlines()
                 matrix = [line.replace(' ', '').replace('"', '').strip().split('\t') for line in lines]
                 
-                #prediction single input of every models
-                for element in files:
+                labels = ['HBOND', 'IONIC', 'PICATION', 'PIPISTACK', 'SSBOND', 'VDW']
+                
+                iteratore = 0
+
+                all_y_pred = []
+                all_y_prob = []
+
+                # Iterate over the files in the selected model's subfolder
+                for i, element in enumerate(files):
+                    print(labels[i])
+                    # Extract the number of features and columns from the file name
                     features, columns = extractInfoFromFile(element)
-                    #load .tsv 
-                    data = []
-                    
-                    #table extraction from .tsv file
+
+                    # Load the TSV file and generate a filtered TSV file
                     temp_matrix = matrix
                     data = generateFiltersTSV(temp_matrix, columns)
 
-                    # Convert input data from DataFrame to PyTorch tensor
-                    data.dropna(inplace=True)     
+                    # Convert the filtered data into a PyTorch tensor
+                    data.dropna(inplace=True)
                     data = MLPFunctions.encode_data(data)
                     data = data.reset_index(drop=True)
-
-                    #crated table for prediction output
-                    
-                    Data_tensor = torch.tensor(data.to_numpy())      
+                    Data_tensor = torch.tensor(data.to_numpy())
                     Data_tensor = Data_tensor.to(torch.float32)
-                
-                    #model/s load
-                    print(features)
+
+                    # Load the model
                     model = load_model(f"{element}", features)
-                    #generate prediction from input data and model
-                    #for model in models:
-                    #models[selected_number].to(device)
-                    #data.to(device)
-                    #Data_tensor = Data_tensor.to(device)
 
-                    y_prob = []
-                    y_pred = []
-
-                    #for model in models:
+                    # Apply the model to the input data
                     outputs = model(Data_tensor)
-                    prob = outputs[:,1]
-                    
-                    predicted_labels = (prob > 0.5).float()
-                    y_pred.append(predicted_labels)
-                    y_prob.append(prob.detach())
 
-                    y_prob.append(prob.detach())
-                    
-                    y_prob_np = np.stack(y_prob, axis=1)
-                    
-                    y_pred = torch.stack(y_pred, dim=1)
+                    # Get the predicted probabilities for the positive class
+                    probas = outputs[:, 1]
 
-                    y_pred = y_pred.cpu().numpy().astype(int)
+                    threshold = 0.5
 
-                    for i in range(950):
-                        print(f'  Predicted probabilities: {y_prob_np[i]}')
-                    
+                    # Apply the threshold to get the predicted labels
+                    predicted_labels = (probas > threshold).float()
+
+                    # Store the predicted labels and probabilities for the current model
+                    all_y_pred.append(predicted_labels)
+                    all_y_prob.append(probas.detach())
+
+                    # Convert the predicted labels and probabilities to NumPy arrays
+                    all_y_pred_np = np.stack(all_y_pred, axis=1)
+                    all_y_prob_np = np.stack(all_y_prob, axis=1)
+
+                    # Print the predictions for all models side by side
+                    print('Predictions for all models:')
+                    for i in range(all_y_pred_np.shape[0]):
+                        print(f'Example {i+1}:')
+                        print(f'  Predicted labels: {all_y_pred_np[i]}')
+                        print(f'  Predicted probabilities: {all_y_prob_np[i]}')
