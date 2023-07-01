@@ -24,3 +24,6 @@ At this point it will be possible to launch the program by executing the command
 <h3>Re-train models:</h3>
 To use new models with different training it is necessary to re-run the delivered ".ipynb" file and save the
 models in a new subfolder in the "models" project folder. At this point, just start the program and choose the desired model when prompted.
+
+<h3>Results:</h3>
+The execution results can be located both in the terminal and in the "outputFolder" folder.

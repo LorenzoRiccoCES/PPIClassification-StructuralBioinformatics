@@ -103,8 +103,6 @@ if __name__ == "__main__":
                 matrix = [line.replace(' ', '').replace('"', '').strip().split('\t') for line in lines]
                 
                 labels = ['HBOND', 'IONIC', 'PICATION', 'PIPISTACK', 'SSBOND', 'VDW']
-                
-                iteratore = 0
 
                 all_y_pred = []
                 all_y_prob = []
@@ -121,7 +119,6 @@ if __name__ == "__main__":
                 else:
                     # Iterate over the files in the selected model's subfolder
                     for i, element in enumerate(files):
-                        print(labels[i])
                         # Extract the number of features and columns from the file name
                         features, columns = extractInfoFromFile(element)
 
@@ -156,12 +153,32 @@ if __name__ == "__main__":
                         all_y_pred_np = np.stack(all_y_pred, axis=1)
                         all_y_prob_np = np.stack(all_y_prob, axis=1)
 
-                        with open(f'outputFolder/Model{i}{labels[i]}.txt', 'w') as file:
-                            file.write(np.array2string(all_y_prob_np, threshold=np.inf))  
+                        #save result last iteration
+                        if i == len(files) - 1:
+                            np.set_printoptions(threshold=np.inf)
+                            #labels + results
+                            variables_str = '\n'.join([
+                                str(labels),
+                                np.array2string(all_y_prob_np, threshold=np.inf, separator=',', suppress_small=True)
+                            ])
+                            #write file
+                            with open(f'outputFolder/ModelOutputProbabilities.txt', 'w') as file:
+                                file.write(variables_str)
+                            
+                            
+                            #labels + results
+                            variables_str = '\n'.join([
+                                str(labels),
+                                str(f"Threshold: {threshold_}"),
+                                np.array2string(all_y_pred_np, threshold=np.inf)
+                            ])    
+                            #write file
+                            with open(f'outputFolder/ModelOutputPredicted.txt', 'w') as file:
+                                file.write(variables_str)    
                         
-                        # Print the predictions for all models side by side
-                        print('Predictions for all models:')
-                        for k in range(all_y_pred_np.shape[0]):
-                            print(f'Example {k+1}:')
-                            print(f'  Predicted labels: {all_y_pred_np[k]}')
-                            print(f'  Predicted probabilities: {all_y_prob_np[k]}')
+                            # Print the predictions for all models side by side
+                            print('Predictions for all models:')
+                            for k in range(all_y_pred_np.shape[0]):
+                                print(f'Example {k+1}:')
+                                print(f'  Predicted labels: {all_y_pred_np[k]}')
+                                print(f'  Predicted probabilities: {all_y_prob_np[k]}')
