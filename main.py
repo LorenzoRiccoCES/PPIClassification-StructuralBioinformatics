@@ -5,6 +5,7 @@ import torch
 import pandas as pd
 import numpy as np
 import re
+import pickle
 
 
 def execute_program(program_path, pdb_id):
@@ -108,48 +109,59 @@ if __name__ == "__main__":
                 all_y_pred = []
                 all_y_prob = []
 
-                # Iterate over the files in the selected model's subfolder
-                for i, element in enumerate(files):
-                    print(labels[i])
-                    # Extract the number of features and columns from the file name
-                    features, columns = extractInfoFromFile(element)
+                threshold_ = float(input("Select a threshold:"))
+                #error handling
+                try:
+                    threshold_ = float(threshold_)
+                    print(float(threshold_))
+                    if threshold_ < 0 or threshold_ > 1:
+                        raise ValueError
+                except ValueError:
+                    print("Threshold must be a number between 0 and 1: execution terminated.")
+                else:
+                    # Iterate over the files in the selected model's subfolder
+                    for i, element in enumerate(files):
+                        print(labels[i])
+                        # Extract the number of features and columns from the file name
+                        features, columns = extractInfoFromFile(element)
 
-                    # Load the TSV file and generate a filtered TSV file
-                    temp_matrix = matrix
-                    data = generateFiltersTSV(temp_matrix, columns)
+                        # Load the TSV file and generate a filtered TSV file
+                        temp_matrix = matrix
+                        data = generateFiltersTSV(temp_matrix, columns)
 
-                    # Convert the filtered data into a PyTorch tensor
-                    data.dropna(inplace=True)
-                    data = MLPFunctions.encode_data(data)
-                    data = data.reset_index(drop=True)
-                    Data_tensor = torch.tensor(data.to_numpy())
-                    Data_tensor = Data_tensor.to(torch.float32)
+                        # Convert the filtered data into a PyTorch tensor
+                        data.dropna(inplace=True)
+                        data = MLPFunctions.encode_data(data)
+                        data = data.reset_index(drop=True)
+                        Data_tensor = torch.tensor(data.to_numpy())
+                        Data_tensor = Data_tensor.to(torch.float32)
 
-                    # Load the model
-                    model = load_model(f"{element}", features)
+                        # Load the model
+                        model = load_model(f"{element}", features)
 
-                    # Apply the model to the input data
-                    outputs = model(Data_tensor)
+                        # Apply the model to the input data
+                        outputs = model(Data_tensor)
 
-                    # Get the predicted probabilities for the positive class
-                    probas = outputs[:, 1]
+                        # Get the predicted probabilities for the positive class
+                        probas = outputs[:, 1]
 
-                    threshold = 0.5
+                        # Apply the threshold to get the predicted labels
+                        predicted_labels = (probas > threshold_).float()
 
-                    # Apply the threshold to get the predicted labels
-                    predicted_labels = (probas > threshold).float()
+                        # Store the predicted labels and probabilities for the current model
+                        all_y_pred.append(predicted_labels)
+                        all_y_prob.append(probas.detach())
 
-                    # Store the predicted labels and probabilities for the current model
-                    all_y_pred.append(predicted_labels)
-                    all_y_prob.append(probas.detach())
+                        # Convert the predicted labels and probabilities to NumPy arrays
+                        all_y_pred_np = np.stack(all_y_pred, axis=1)
+                        all_y_prob_np = np.stack(all_y_prob, axis=1)
 
-                    # Convert the predicted labels and probabilities to NumPy arrays
-                    all_y_pred_np = np.stack(all_y_pred, axis=1)
-                    all_y_prob_np = np.stack(all_y_prob, axis=1)
-
-                    # Print the predictions for all models side by side
-                    print('Predictions for all models:')
-                    for i in range(all_y_pred_np.shape[0]):
-                        print(f'Example {i+1}:')
-                        print(f'  Predicted labels: {all_y_pred_np[i]}')
-                        print(f'  Predicted probabilities: {all_y_prob_np[i]}')
+                        with open(f'outputFolder/Model{i}{labels[i]}.txt', 'w') as file:
+                            file.write(np.array2string(all_y_prob_np, threshold=np.inf))  
+                        
+                        # Print the predictions for all models side by side
+                        print('Predictions for all models:')
+                        for k in range(all_y_pred_np.shape[0]):
+                            print(f'Example {k+1}:')
+                            print(f'  Predicted labels: {all_y_pred_np[k]}')
+                            print(f'  Predicted probabilities: {all_y_prob_np[k]}')
