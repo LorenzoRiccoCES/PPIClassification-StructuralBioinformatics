@@ -27,7 +27,7 @@ models in a new subfolder in the "models" project folder. At this point, just st
 
 Attention: the model files must contain in the name some information necessary to allow the software to process them correctly:
  <ul>
-  <li>_features_ : list of features separated by the "-" character on which the model has been trained</li>
+  <li>"_features_" : list of features separated by the "-" character on which the model has been trained</li>
   <li>"_columns_": number of feature columns</li>
 </ul> 
 
