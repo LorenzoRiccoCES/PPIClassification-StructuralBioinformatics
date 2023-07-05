@@ -25,5 +25,11 @@ At this point it will be possible to launch the program by executing the command
 To use new models with different training it is necessary to re-run the delivered ".ipynb" file and save the
 models in a new subfolder in the "models" project folder. At this point, just start the program and choose the desired model when prompted.
 
+Attention: the model files must contain in the name some information necessary to allow the software to process them correctly:
+ <ul>
+  <li>_features_ : list of features separated by the "-" character on which the model has been trained</li>
+  <li>"_columns_": number of feature columns</li>
+</ul> 
+
 <h3>Results:</h3>
 The execution results can be located both in the terminal and in the "outputFolder" folder.
